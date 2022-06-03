@@ -2,3 +2,14 @@
 
 Adapted from https://github.com/onsails/cloudbuild-slack
 
+This bot uses the Slack SDK to alert for Google CloudBuilds
+
+It updates previous messages for the build so it doesn't flood the channel with messages
+
+Run with:
+
+```
+ALERT_CHANNEL=<slack_channel_name> ./deploy.sh
+```
+
+After the first run, add your `BOT_TOKEN` and `USER_TOKEN` secrets to the function and redeploy it.

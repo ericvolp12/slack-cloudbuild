@@ -30,10 +30,11 @@ export interface Substitutions {
   REF_NAME: string;
   _DEPLOY_REGION: string;
   _TRIGGER_ID: string;
+  _GOOGLE_FUNCTION_TARGET?: string;
 }
 
 export interface Build {
-  id: number;
+  id: string;
   status: string;
   logUrl: string;
   source: Source;

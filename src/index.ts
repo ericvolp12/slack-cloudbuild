@@ -6,9 +6,14 @@ import { WebClient } from '@slack/web-api';
 
 sourceMapSupport.install();
 
+// Initialize a User Client to allow us to Search messages
 const userClient = new WebClient(process.env.USER_TOKEN);
 
+// Initialize a Bot Client to send and update Messages
 const botClient = new WebClient(process.env.BOT_TOKEN);
+
+// Intiialize the channel name (without the leading #) to lookup
+const channelName = process.env.ALERT_CHANNEL;
 
 export async function gcbSubscribeSlack(
   pubSubEvent: pubsub.Event,
@@ -27,14 +32,13 @@ export async function gcbSubscribeSlack(
 
   const blocks = render.createMessage(build);
 
-  const searchString = `"Deploy ${build.substitutions.REPO_NAME || ''}@${build
-    .substitutions.SHORT_SHA || ''}"`;
+  const searchString = `"Build ID: *${build.id}*"`;
 
   const conversations = await userClient.conversations.list();
 
   let channelID = '';
   conversations.channels?.forEach(channel => {
-    if (channel.name === 'sw-backend' && channel.id) {
+    if (channel.name === channelName && channel.id) {
       channelID = channel.id;
     }
   });

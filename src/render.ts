@@ -1,4 +1,10 @@
-import { Block, HeaderBlock, SectionBlock, DividerBlock } from '@slack/types';
+import {
+  Block,
+  HeaderBlock,
+  SectionBlock,
+  DividerBlock,
+  ContextBlock,
+} from '@slack/types';
 import * as ejs from 'ejs';
 import * as pubsub from './pubsub';
 
@@ -23,8 +29,7 @@ export function statusEmoji(status: string): string {
   }
 }
 
-const DEFAULT_TITLE_TEMPLATE =
-  '<%= emoji %> <%= status %> | Deploy <%= repoName %>@<%= commitSha %>';
+const DEFAULT_TITLE_TEMPLATE = '<%= emoji %> <%= status %> | <%= message %>';
 
 export function createMessage(build: pubsub.Build): Block[] {
   let emoji = statusEmoji(build.status);
@@ -34,12 +39,20 @@ export function createMessage(build: pubsub.Build): Block[] {
   let repoName = build.substitutions.REPO_NAME;
   let commitSha = build.substitutions.SHORT_SHA;
   let branchName = build.substitutions.BRANCH_NAME;
+  let triggerName = build.substitutions.TRIGGER_NAME;
+  let functionTarget = build.substitutions._GOOGLE_FUNCTION_TARGET;
+  let message = 'Running Unknown Build';
+
+  if (repoName && commitSha) {
+    message = `Deploying Project ${repoName} @ ${commitSha}`;
+  } else if (functionTarget) {
+    message = `Deploying Function ${functionTarget}`;
+  } else if (triggerName) {
+    message = `Deploying from Trigger ${triggerName}`;
+  }
 
   const headerText = ejs.render(templateToRender, {
-    repoName: repoName,
-    commitSha: commitSha,
-    branchName: branchName,
-    triggerName: build.substitutions.TRIGGER_NAME,
+    message: message,
     status:
       build.status.charAt(0).toUpperCase() +
       build.status.substring(1).toLowerCase(),
@@ -55,6 +68,18 @@ export function createMessage(build: pubsub.Build): Block[] {
   };
 
   let blocks: Block[] = [headerBlock];
+
+  let contextBlock: ContextBlock = {
+    type: 'context',
+    elements: [
+      {
+        type: 'mrkdwn',
+        text: `Build ID: *${build.id}*`,
+      },
+    ],
+  };
+
+  blocks.push(contextBlock);
 
   let dividerBlock: DividerBlock = { type: 'divider' };
 
