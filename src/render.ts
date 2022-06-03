@@ -32,15 +32,16 @@ export function statusEmoji(status: string): string {
 const DEFAULT_TITLE_TEMPLATE = '<%= emoji %> <%= status %> | <%= message %>';
 
 export function createMessage(build: pubsub.Build): Block[] {
-  let emoji = statusEmoji(build.status);
+  const emoji = statusEmoji(build.status);
 
-  let templateToRender = DEFAULT_TITLE_TEMPLATE;
+  const templateToRender = DEFAULT_TITLE_TEMPLATE;
 
-  let repoName = build.substitutions.REPO_NAME;
-  let commitSha = build.substitutions.SHORT_SHA;
-  let branchName = build.substitutions.BRANCH_NAME;
-  let triggerName = build.substitutions.TRIGGER_NAME;
-  let functionTarget = build.substitutions._GOOGLE_FUNCTION_TARGET;
+  const repoName = build.substitutions.REPO_NAME;
+  const commitSha = build.substitutions.SHORT_SHA;
+  const branchName = build.substitutions.BRANCH_NAME;
+  const triggerName = build.substitutions.TRIGGER_NAME;
+  // eslint-disable-next-line no-underscore-dangle
+  const functionTarget = build.substitutions._GOOGLE_FUNCTION_TARGET;
   let message = 'Running Unknown Build';
 
   if (repoName && commitSha) {
@@ -52,14 +53,14 @@ export function createMessage(build: pubsub.Build): Block[] {
   }
 
   const headerText = ejs.render(templateToRender, {
-    message: message,
+    message,
     status:
       build.status.charAt(0).toUpperCase() +
       build.status.substring(1).toLowerCase(),
-    emoji: emoji,
+    emoji,
   });
 
-  let headerBlock: HeaderBlock = {
+  const headerBlock: HeaderBlock = {
     type: 'header',
     text: {
       type: 'plain_text',
@@ -67,9 +68,9 @@ export function createMessage(build: pubsub.Build): Block[] {
     },
   };
 
-  let blocks: Block[] = [headerBlock];
+  const blocks: Block[] = [headerBlock];
 
-  let contextBlock: ContextBlock = {
+  const contextBlock: ContextBlock = {
     type: 'context',
     elements: [
       {
@@ -81,11 +82,11 @@ export function createMessage(build: pubsub.Build): Block[] {
 
   blocks.push(contextBlock);
 
-  let dividerBlock: DividerBlock = { type: 'divider' };
+  const dividerBlock: DividerBlock = { type: 'divider' };
 
   blocks.push(dividerBlock);
 
-  let descBlock: SectionBlock = {
+  const descBlock: SectionBlock = {
     type: 'section',
   };
 

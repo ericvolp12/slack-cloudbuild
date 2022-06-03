@@ -2,19 +2,6 @@ export interface Event {
   data: string;
 }
 
-export interface Source {
-  repoSource?: RepoSource;
-}
-
-export interface RepoSource {
-  repoName: string;
-  branchName: string;
-  tagName: string;
-  commitSha: string;
-  dir: string;
-  projectId: string;
-}
-
 export interface Substitutions {
   _PLATFORM: string;
   TRIGGER_BUILD_CONFIG_PATH: string;
@@ -37,7 +24,6 @@ export interface Build {
   id: string;
   status: string;
   logUrl: string;
-  source: Source;
   substitutions: Substitutions;
   BRANCH_NAME: string;
   SHORT_SHA: string;

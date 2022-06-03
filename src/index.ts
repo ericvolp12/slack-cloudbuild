@@ -1,8 +1,8 @@
+/* eslint-disable no-console */
+import sourceMapSupport from 'source-map-support';
+import { WebClient } from '@slack/web-api';
 import * as pubsub from './pubsub';
 import * as render from './render';
-import sourceMapSupport from 'source-map-support';
-
-import { WebClient } from '@slack/web-api';
 
 sourceMapSupport.install();
 
@@ -15,10 +15,26 @@ const botClient = new WebClient(process.env.BOT_TOKEN);
 // Intiialize the channel name (without the leading #) to lookup
 const channelName = process.env.ALERT_CHANNEL;
 
-export async function gcbSubscribeSlack(
-  pubSubEvent: pubsub.Event,
-  _context: Object
-) {
+const STATUSES = [
+  'SUCCESS',
+  'FAILURE',
+  'INTERNAL_ERROR',
+  'TIMEOUT',
+  // 'QUEUED',
+  'WORKING',
+  'CANCELLED',
+];
+
+function isLoudStatus(status: string): boolean {
+  if (STATUSES.indexOf(status) === -1) {
+    return false;
+  }
+  return true;
+}
+
+// This function is the main entrypoint for our CloudFunction, we'll end up with an unused context var
+// eslint-disable-next-line no-unused-vars
+async function gcbSubscribeSlack(pubSubEvent: pubsub.Event, _context: Object) {
   console.debug(JSON.stringify(pubSubEvent));
 
   const build = pubsub.deserBuild(pubSubEvent);
@@ -61,7 +77,7 @@ export async function gcbSubscribeSlack(
           as_user: true,
           ts: oldMessage.ts,
           channel: channelID,
-          blocks: blocks,
+          blocks,
         });
         return;
       }
@@ -72,24 +88,8 @@ export async function gcbSubscribeSlack(
 
   await botClient.chat.postMessage({
     channel: channelID,
-    blocks: blocks,
+    blocks,
   });
 }
 
-const STATUSES = [
-  'SUCCESS',
-  'FAILURE',
-  'INTERNAL_ERROR',
-  'TIMEOUT',
-  // 'QUEUED',
-  'WORKING',
-  'CANCELLED',
-];
-
-function isLoudStatus(status: string): boolean {
-  if (STATUSES.indexOf(status) === -1) {
-    return false;
-  } else {
-    return true;
-  }
-}
+export default gcbSubscribeSlack;
