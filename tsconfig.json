@@ -1,6 +1,7 @@
 {
   "include": ["src", "types"],
   "compilerOptions": {
+    "target": "es2017",
     "module": "esnext",
     "lib": ["dom", "esnext", "es2015.collection"],
     "importHelpers": true,

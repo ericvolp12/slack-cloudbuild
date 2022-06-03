@@ -1,10 +1,15 @@
-import { IncomingWebhookSendArguments } from '@slack/webhook';
-import { SectionBlock } from '@slack/types';
+import { Block, HeaderBlock, SectionBlock, DividerBlock } from '@slack/types';
 import * as ejs from 'ejs';
 import * as pubsub from './pubsub';
 
 export function statusEmoji(status: string): string {
   switch (status) {
+    case 'QUEUED':
+      return ':clock1:';
+    case 'CANCELLED':
+      return ':grey_exclamation:';
+    case 'WORKING':
+      return ':hourglass_flowing_sand:';
     case 'SUCCESS':
       return ':white_check_mark:';
     case 'FAILURE':
@@ -19,43 +24,51 @@ export function statusEmoji(status: string): string {
 }
 
 const DEFAULT_TITLE_TEMPLATE =
-  '<%= emoji %> `<%= build.id %>` <%= build.status %>';
+  '<%= emoji %> <%= status %> | Deploy <%= repoName %>@<%= commitSha %>';
 
-export function createMessage(
-  build: pubsub.Build
-): IncomingWebhookSendArguments {
+export function createMessage(build: pubsub.Build): Block[] {
   let emoji = statusEmoji(build.status);
 
-  let templateToRender =
-    build.substitutions['_SLACK_MESSAGE_TEMPLATE'] || DEFAULT_TITLE_TEMPLATE;
+  let templateToRender = DEFAULT_TITLE_TEMPLATE;
 
-  const text = ejs.render(templateToRender, {
-    build: build,
+  let repoName = build.substitutions.REPO_NAME;
+  let commitSha = build.substitutions.SHORT_SHA;
+  let branchName = build.substitutions.BRANCH_NAME;
+
+  const headerText = ejs.render(templateToRender, {
+    repoName: repoName,
+    commitSha: commitSha,
+    branchName: branchName,
+    triggerName: build.substitutions.TRIGGER_NAME,
+    status:
+      build.status.charAt(0).toUpperCase() +
+      build.status.substring(1).toLowerCase(),
     emoji: emoji,
   });
 
-  let titleBlock: SectionBlock = {
-    type: 'section',
+  let headerBlock: HeaderBlock = {
+    type: 'header',
     text: {
-      type: 'mrkdwn',
-      text: text,
+      type: 'plain_text',
+      text: headerText,
     },
   };
 
-  let message: IncomingWebhookSendArguments = {
-    blocks: [titleBlock],
-  };
+  let blocks: Block[] = [headerBlock];
+
+  let dividerBlock: DividerBlock = { type: 'divider' };
+
+  blocks.push(dividerBlock);
 
   let descBlock: SectionBlock = {
     type: 'section',
   };
 
-  let repoSource = build.source.repoSource;
-  if (repoSource) {
+  if (repoName && commitSha && branchName) {
     descBlock.fields = [
       {
         type: 'mrkdwn',
-        text: `*Repo*: ${repoSource.repoName}, *branch*: ${build.substitutions['BRANCH_NAME']}, *commit*: ${repoSource.commitSha}\n<${build.logUrl}|*Details*>`,
+        text: `*Repo*: <https://github.com/MEKA-Works/${repoName}|*${repoName}*>\n*Branch*: ${branchName}\n*Commit*: ${commitSha}\n<${build.logUrl}|*Cloud Build Details*>`,
       },
     ];
   } else {
@@ -67,7 +80,7 @@ export function createMessage(
     ];
   }
 
-  message.blocks?.push(descBlock);
+  blocks.push(descBlock);
 
-  return message;
+  return blocks;
 }
