@@ -1,12 +1,13 @@
 {
   "include": ["src", "types"],
   "compilerOptions": {
-    "target": "es2017",
-    "module": "esnext",
-    "lib": ["dom", "esnext", "es2015.collection"],
+    "target": "es2018",
+    "module": "ES2022",
+    "lib": ["dom", "es2018"],
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,
+    "pretty": true,
     "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,

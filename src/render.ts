@@ -5,8 +5,9 @@ import {
   DividerBlock,
   ContextBlock,
 } from '@slack/types';
-import * as ejs from 'ejs';
-import * as pubsub from './pubsub';
+import { render } from 'ejs';
+// eslint-disable-next-line import/no-unresolved
+import { Build } from './pubsub.js';
 
 export function statusEmoji(status: string): string {
   switch (status) {
@@ -31,7 +32,7 @@ export function statusEmoji(status: string): string {
 
 const DEFAULT_TITLE_TEMPLATE = '<%= emoji %> <%= status %> | <%= message %>';
 
-export function createMessage(build: pubsub.Build): Block[] {
+export function createMessage(build: Build): Block[] {
   const emoji = statusEmoji(build.status);
 
   const templateToRender = DEFAULT_TITLE_TEMPLATE;
@@ -52,7 +53,7 @@ export function createMessage(build: pubsub.Build): Block[] {
     message = `Deploying from Trigger ${triggerName}`;
   }
 
-  const headerText = ejs.render(templateToRender, {
+  const headerText = render(templateToRender, {
     message,
     status:
       build.status.charAt(0).toUpperCase() +

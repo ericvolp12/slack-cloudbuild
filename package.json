@@ -11,15 +11,10 @@
     "node": ">=14"
   },
   "scripts": {
-    "start": "tsc -w -p",
-    "build": "npm run lint && tsc",
+    "gcp-build": "npm run build",
+    "start": "npm run build && npx @google-cloud/functions-framework --target=gcbSubscribeSlack",
+    "build": "tsc",
     "lint": "eslint src/"
-  },
-  "peerDependencies": {},
-  "husky": {
-    "hooks": {
-      "pre-commit": "tsdx lint"
-    }
   },
   "prettier": {
     "printWidth": 80,
@@ -29,8 +24,9 @@
   },
   "name": "subscribeslack",
   "author": "Eric Volpert",
-  "module": "dist/subscribeslack.esm.js",
+  "type": "module",
   "devDependencies": {
+    "@google-cloud/functions-framework": "^3.1.1",
     "@types/ejs": "3.1.1",
     "@types/source-map-support": "0.5.4",
     "@typescript-eslint/eslint-plugin": "^5.27.0",
@@ -40,15 +36,14 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-import-resolver-typescript": "^2.7.1",
     "eslint-plugin-import": "^2.25.2",
-    "eslint-plugin-prettier": "^4.0.0",
-    "husky": "8.0.1",
-    "tslib": "2.4.0",
-    "typescript": "4.7.3"
+    "eslint-plugin-prettier": "^4.0.0"
   },
   "dependencies": {
     "@slack/types": "^2.5.0",
     "@slack/web-api": "^6.7.1",
     "ejs": "^3.1.6",
-    "source-map-support": "^0.5.20"
+    "source-map-support": "^0.5.20",
+    "tslib": "2.4.0",
+    "typescript": "4.7.3"
   }
 }

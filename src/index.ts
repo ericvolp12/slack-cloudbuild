@@ -1,8 +1,10 @@
 /* eslint-disable no-console */
 import sourceMapSupport from 'source-map-support';
 import { WebClient } from '@slack/web-api';
-import * as pubsub from './pubsub';
-import * as render from './render';
+// eslint-disable-next-line import/no-unresolved
+import { Event, deserBuild } from './pubsub.js';
+// eslint-disable-next-line import/no-unresolved
+import { createMessage } from './render.js';
 
 sourceMapSupport.install();
 
@@ -33,25 +35,21 @@ function isLoudStatus(status: string): boolean {
 }
 
 // This function is the main entrypoint for our CloudFunction, we'll end up with an unused context var
-// eslint-disable-next-line no-unused-vars
-async function gcbSubscribeSlack(pubSubEvent: pubsub.Event, _context: Object) {
-  console.debug(JSON.stringify(pubSubEvent));
+// eslint-disable-next-line import/prefer-default-export
+export const gcbSubscribeSlack = async (
+  pubSubEvent: Event,
+  // eslint-disable-next-line no-unused-vars
+  _context: Object
+) => {
+  const build = deserBuild(pubSubEvent);
 
-  const build = pubsub.deserBuild(pubSubEvent);
-  console.info(JSON.stringify(build));
-
-  console.log(`Slack Web Client Status: ${await userClient.api.test()}`);
-
+  // Determine if this is a build status we want to notify on
   if (!isLoudStatus(build.status)) {
     return;
   }
 
-  const blocks = render.createMessage(build);
-
-  const searchString = `"Build ID: *${build.id}*"`;
-
+  // Find the channel we're posting to
   const conversations = await userClient.conversations.list();
-
   let channelID = '';
   conversations.channels?.forEach(channel => {
     if (channel.name === channelName && channel.id) {
@@ -59,16 +57,18 @@ async function gcbSubscribeSlack(pubSubEvent: pubsub.Event, _context: Object) {
     }
   });
 
-  // Find a previous message if we're updating it
+  // Try to find an old message if we're updating an existing build status
+  const searchString = `"Build ID: *${build.id}*"`;
   const oldMessages = await userClient.search.messages({
     query: searchString,
     sort: 'timestamp',
     sort_dir: 'desc',
   });
 
-  console.debug('Dumping Old Messages...');
-  console.debug(JSON.stringify(oldMessages));
+  // Generate the new message blocks for this event
+  const blocks = createMessage(build);
 
+  // If we found an old message, update it
   if (oldMessages.messages && oldMessages.messages.matches) {
     try {
       const oldMessage = oldMessages.messages.matches[0];
@@ -86,10 +86,9 @@ async function gcbSubscribeSlack(pubSubEvent: pubsub.Event, _context: Object) {
     }
   }
 
+  // If we didn't find an old message, post a new one
   await botClient.chat.postMessage({
     channel: channelID,
     blocks,
   });
-}
-
-export default gcbSubscribeSlack;
+};
