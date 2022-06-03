@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "1.0.0",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -32,7 +32,7 @@
     "trailingComma": "es5"
   },
   "name": "subscribeslack",
-  "author": "Andrey Kuznetsov",
+  "author": "Eric Volpert",
   "module": "dist/subscribeslack.esm.js",
   "devDependencies": {
     "@types/ejs": "3.1.1",
