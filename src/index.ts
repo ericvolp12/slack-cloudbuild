@@ -17,6 +17,8 @@ const botClient = new WebClient(process.env.BOT_TOKEN);
 // Intiialize the channel name (without the leading #) to lookup
 const channelName = process.env.ALERT_CHANNEL;
 
+const githubOrg = process.env.GITHUB_ORG || '';
+
 const STATUSES = [
   'SUCCESS',
   'FAILURE',
@@ -51,7 +53,7 @@ export const gcbSubscribeSlack = async (
   // Find the channel we're posting to
   const conversations = await userClient.conversations.list();
   let channelID = '';
-  conversations.channels?.forEach(channel => {
+  conversations.channels?.forEach((channel) => {
     if (channel.name === channelName && channel.id) {
       channelID = channel.id;
     }
@@ -66,7 +68,28 @@ export const gcbSubscribeSlack = async (
   });
 
   // Generate the new message blocks for this event
-  const blocks = createMessage(build);
+  const [headerBlock, attachmentBlocks] = createMessage(build, githubOrg);
+
+  let statusColor = '';
+  switch (build.status) {
+    case 'SUCCESS':
+      statusColor = '#36a64f';
+      break;
+    case 'FAILURE':
+      statusColor = '#cb2431';
+      break;
+    case 'CANCELLED':
+      statusColor = '#ffaaa6';
+      break;
+    case 'WORKING':
+      statusColor = '#7575ff';
+      break;
+    case 'INTERNAL_ERROR':
+      statusColor = '#cb2431';
+      break;
+    default:
+      statusColor = '#36a64f';
+  }
 
   // If we found an old message, update it
   if (oldMessages.messages && oldMessages.messages.matches) {
@@ -77,7 +100,13 @@ export const gcbSubscribeSlack = async (
           as_user: true,
           ts: oldMessage.ts,
           channel: channelID,
-          blocks,
+          blocks: [headerBlock],
+          attachments: [
+            {
+              color: statusColor,
+              blocks: attachmentBlocks,
+            },
+          ],
         });
         return;
       }
@@ -89,6 +118,12 @@ export const gcbSubscribeSlack = async (
   // If we didn't find an old message, post a new one
   await botClient.chat.postMessage({
     channel: channelID,
-    blocks,
+    blocks: [headerBlock],
+    attachments: [
+      {
+        color: statusColor,
+        blocks: attachmentBlocks,
+      },
+    ],
   });
 };

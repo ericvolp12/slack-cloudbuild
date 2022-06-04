@@ -1,10 +1,4 @@
-import {
-  Block,
-  HeaderBlock,
-  SectionBlock,
-  DividerBlock,
-  ContextBlock,
-} from '@slack/types';
+import { Block, SectionBlock, ContextBlock } from '@slack/types';
 import { render } from 'ejs';
 // eslint-disable-next-line import/no-unresolved
 import { Build } from './pubsub.js';
@@ -32,7 +26,10 @@ export function statusEmoji(status: string): string {
 
 const DEFAULT_TITLE_TEMPLATE = '<%= emoji %> <%= status %> | <%= message %>';
 
-export function createMessage(build: Build): Block[] {
+export function createMessage(
+  build: Build,
+  githubOrg: string
+): [Block, Block[]] {
   const emoji = statusEmoji(build.status);
 
   const templateToRender = DEFAULT_TITLE_TEMPLATE;
@@ -46,7 +43,7 @@ export function createMessage(build: Build): Block[] {
   let message = 'Running Unknown Build';
 
   if (repoName && commitSha) {
-    message = `Deploying Project ${repoName} @ ${commitSha}`;
+    message = `Deploying Project ${repoName} @ \`${commitSha}\``;
   } else if (functionTarget) {
     message = `Deploying Function ${functionTarget}`;
   } else if (triggerName) {
@@ -61,15 +58,49 @@ export function createMessage(build: Build): Block[] {
     emoji,
   });
 
-  const headerBlock: HeaderBlock = {
-    type: 'header',
+  const headerBlock: SectionBlock = {
+    type: 'section',
     text: {
-      type: 'plain_text',
+      type: 'mrkdwn',
       text: headerText,
     },
   };
 
-  const blocks: Block[] = [headerBlock];
+  const attachmentBlocks: Block[] = [];
+
+  const descBlock: SectionBlock = {
+    type: 'section',
+  };
+
+  if (repoName && commitSha && branchName) {
+    descBlock.fields = [
+      {
+        type: 'mrkdwn',
+        text: `*Repo*: <https://github.com/${githubOrg}/${repoName}|${repoName}>`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*Branch*: <https://github.com/${githubOrg}/${repoName}/tree/${branchName}|${branchName}>`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*Details*: <${build.logUrl}|Cloud Build>`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*Commit*: <https://github.com/${githubOrg}/${repoName}/commit/${build.substitutions.COMMIT_SHA}|${commitSha}>`,
+      },
+    ];
+  } else {
+    descBlock.fields = [
+      {
+        type: 'mrkdwn',
+        text: `*Details*: <${build.logUrl}|Cloud Build>`,
+      },
+    ];
+  }
+
+  attachmentBlocks.push(descBlock);
 
   const contextBlock: ContextBlock = {
     type: 'context',
@@ -81,33 +112,7 @@ export function createMessage(build: Build): Block[] {
     ],
   };
 
-  blocks.push(contextBlock);
+  attachmentBlocks.push(contextBlock);
 
-  const dividerBlock: DividerBlock = { type: 'divider' };
-
-  blocks.push(dividerBlock);
-
-  const descBlock: SectionBlock = {
-    type: 'section',
-  };
-
-  if (repoName && commitSha && branchName) {
-    descBlock.fields = [
-      {
-        type: 'mrkdwn',
-        text: `*Repo*: <https://github.com/MEKA-Works/${repoName}|*${repoName}*>\n*Branch*: ${branchName}\n*Commit*: ${commitSha}\n<${build.logUrl}|*Cloud Build Details*>`,
-      },
-    ];
-  } else {
-    descBlock.fields = [
-      {
-        type: 'mrkdwn',
-        text: `<${build.logUrl}|*Details*>`,
-      },
-    ];
-  }
-
-  blocks.push(descBlock);
-
-  return blocks;
+  return [headerBlock, attachmentBlocks];
 }
