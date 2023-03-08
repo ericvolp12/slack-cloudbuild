@@ -2,7 +2,7 @@
 import sourceMapSupport from 'source-map-support';
 import { WebClient } from '@slack/web-api';
 // eslint-disable-next-line import/no-unresolved
-import { Event, deserBuild } from './pubsub.js';
+import { Event, deserializeBuildEvent } from './pubsub.js';
 // eslint-disable-next-line import/no-unresolved
 import { createMessage } from './render.js';
 
@@ -14,7 +14,7 @@ const userClient = new WebClient(process.env.USER_TOKEN);
 // Initialize a Bot Client to send and update Messages
 const botClient = new WebClient(process.env.BOT_TOKEN);
 
-// Intiialize the channel name (without the leading #) to lookup
+// Initialize the channel name (without the leading #) to lookup
 const channelName = process.env.ALERT_CHANNEL;
 
 const githubOrg = process.env.GITHUB_ORG || '';
@@ -43,7 +43,7 @@ export const gcbSubscribeSlack = async (
   // eslint-disable-next-line no-unused-vars
   _context: Object
 ) => {
-  const build = deserBuild(pubSubEvent);
+  const build = deserializeBuildEvent(pubSubEvent);
 
   // Determine if this is a build status we want to notify on
   if (!isLoudStatus(build.status)) {

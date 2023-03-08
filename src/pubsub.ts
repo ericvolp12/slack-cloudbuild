@@ -29,6 +29,6 @@ export interface Build {
   SHORT_SHA: string;
 }
 
-export function deserBuild(event: Event): Build {
+export function deserializeBuildEvent(event: Event): Build {
   return JSON.parse(Buffer.from(event.data, 'base64').toString());
 }
