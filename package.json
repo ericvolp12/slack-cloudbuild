@@ -44,6 +44,6 @@
     "ejs": "^3.1.6",
     "source-map-support": "^0.5.20",
     "tslib": "2.5.0",
-    "typescript": "5.0.2"
+    "typescript": "5.0.3"
   }
 }
